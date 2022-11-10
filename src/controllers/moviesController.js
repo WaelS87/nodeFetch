@@ -1,4 +1,5 @@
 const path = require("path");
+require('dotenv').config()
 const db = require("../database/models");
 const sequelize = db.sequelize;
 const { Op } = require("sequelize");
@@ -9,7 +10,7 @@ const fetch = require("node-fetch");
 const Movies = db.Movie;
 const Genres = db.Genre;
 const Actors = db.Actor;
-const API = "http://www.omdbapi.com/?apikey=a185ead6";
+const URL_OMDB = `http://www.omdbapi.com/?apikey=${process.env.OMDB_APIKEY}`;
 
 const moviesController = {
   list: (req, res) => {
@@ -46,7 +47,19 @@ const moviesController = {
     });
   },
   //Aqui debo modificar para crear la funcionalidad requerida
-  buscar: (req, res) => {},
+  buscar: async(req, res) => {
+    try {
+      const {titulo}=req.query
+      let response = await fetch(`${URL_OMDB}&t=${titulo}`)
+      let result = await response.json()
+      return res.render('moviesDetailOmdb',{
+        movie:result
+      })
+      
+    } catch (error) {
+      console.log(error)
+    }
+  },
   
   add: function (req, res) {
     let promGenres = Genres.findAll();
