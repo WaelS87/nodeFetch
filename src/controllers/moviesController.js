@@ -50,16 +50,46 @@ const moviesController = {
   buscar: async(req, res) => {
     try {
       const {titulo}=req.query
-      let response = await fetch(`${URL_OMDB}&t=${titulo}`)
-      let result = await response.json()
-      return res.render('moviesDetailOmdb',{
-        movie:result
+      let movie = {}
+
+      let result = await db.Movie.findOne({
+        where:{
+          title:{
+            [Op.substring]:titulo
+          }
+        }
       })
-      
-    } catch (error) {
-      console.log(error)
-    }
-  },
+      if(result){
+        movie= {
+          Title : result.title,
+          Year : new Date(result.release_date).getFullYear(),
+          Poster:'default.png',
+          Awards:result.awards,
+          Runtime:result.length
+        }
+        
+      }else{
+        let response = await fetch(`${URL_OMDB}&t=${titulo}`)
+        movie = await response.json()
+        if(movie){
+          await db.Movie.create({
+            title : movie.Title,
+            release_date:movie.Year,
+            avatar:movie.Poster,
+            awards:movie.Awards,
+            length:movie.Runtime
+          })
+        }
+      return res.render('moviesDetailOmdb',{
+        movie
+      })
+    
+    }   
+    } catch(error){
+    console.log(error)};
+    
+  }
+  ,
   
   add: function (req, res) {
     let promGenres = Genres.findAll();
